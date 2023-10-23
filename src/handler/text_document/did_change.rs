@@ -11,5 +11,6 @@ pub(crate) async fn handle(backend: &Backend, params: DidChangeTextDocumentParam
     let new = changes.remove(changes_len - 1).text;
 
     let mut open_docs = backend.open_docs.lock().await;
-    open_docs.insert(params.text_document.uri, new);
+    let tree = backend.parser.lock().await.parse(new, None).unwrap();
+    open_docs.insert(params.text_document.uri, tree);
 }

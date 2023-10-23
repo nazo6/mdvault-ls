@@ -6,6 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+educe = "0.4.23"
 tokio = { version = "1.33.0", features = [
   "macros",
   "rt-multi-thread",
@@ -13,3 +14,5 @@ tokio = { version = "1.33.0", features = [
   "io-std",
 ] }
 tower-lsp = "0.20.0"
+tree-sitter = "0.20.10"
+tree-sitter-md = "0.1.5"
