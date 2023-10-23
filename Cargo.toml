@@ -1,0 +1,15 @@
+[package]
+name = "mdvault-ls"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+tokio = { version = "1.33.0", features = [
+  "macros",
+  "rt-multi-thread",
+  "io-util",
+  "io-std",
+] }
+tower-lsp = "0.20.0"
