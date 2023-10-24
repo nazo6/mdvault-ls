@@ -14,7 +14,7 @@ mod utils;
 #[educe(Debug)]
 struct Backend {
     client: Client,
-    open_docs: Mutex<HashMap<Url, Tree>>,
+    open_docs: Mutex<HashMap<Url, (String, Tree)>>,
     #[educe(Debug(ignore))]
     parser: Mutex<Parser>,
 }
