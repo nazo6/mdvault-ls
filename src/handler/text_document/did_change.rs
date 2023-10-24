@@ -1,6 +1,6 @@
 use tower_lsp::lsp_types::DidChangeTextDocumentParams;
 
-use crate::Backend;
+use crate::interface::{Backend, Document};
 
 pub(crate) async fn handle(backend: &Backend, params: DidChangeTextDocumentParams) {
     let mut changes = params.content_changes;
@@ -10,7 +10,14 @@ pub(crate) async fn handle(backend: &Backend, params: DidChangeTextDocumentParam
     }
     let new = changes.remove(changes_len - 1).text;
 
-    let mut open_docs = backend.open_docs.lock().await;
+    let mut docs = backend.docs.write().await;
     let tree = backend.parser.lock().await.parse(&new, None).unwrap();
-    open_docs.insert(params.text_document.uri, (new, tree));
+    docs.insert(
+        params.text_document.uri,
+        Document {
+            src: new,
+            tree,
+            open: true,
+        },
+    );
 }

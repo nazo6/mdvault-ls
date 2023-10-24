@@ -3,11 +3,24 @@ use tower_lsp::lsp_types::*;
 use tower_lsp::LanguageServer;
 
 use crate::handler;
-use crate::Backend;
+use crate::interface::Backend;
+use crate::watcher::async_watch;
 
 #[tower_lsp::async_trait]
 impl LanguageServer for Backend {
-    async fn initialize(&self, _: InitializeParams) -> Result<InitializeResult> {
+    async fn initialize(&self, params: InitializeParams) -> Result<InitializeResult> {
+        let workspace = params.workspace_folders.ok_or_else(|| {
+            tower_lsp::jsonrpc::Error::invalid_params("Single file is not supported")
+        })?;
+        let workspace = workspace.get(0).ok_or_else(|| {
+            tower_lsp::jsonrpc::Error::invalid_params("No workspace is specified")
+        })?;
+        let path = workspace.uri.path().to_string();
+
+        tokio::spawn(async move {
+            async_watch(path).await;
+        });
+
         Ok(InitializeResult {
             capabilities: ServerCapabilities {
                 hover_provider: Some(HoverProviderCapability::Simple(true)),

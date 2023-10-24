@@ -1,23 +1,13 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::Arc};
 
-use educe::Educe;
-use tokio::sync::Mutex;
-use tower_lsp::lsp_types::*;
-use tower_lsp::{Client, LspService, Server};
-use tree_sitter::{Parser, Tree};
+use tokio::sync::{Mutex, RwLock};
+use tower_lsp::{LspService, Server};
 
 mod handler;
+mod interface;
 mod server;
 mod utils;
-
-#[derive(Educe)]
-#[educe(Debug)]
-struct Backend {
-    client: Client,
-    open_docs: Mutex<HashMap<Url, (String, Tree)>>,
-    #[educe(Debug(ignore))]
-    parser: Mutex<Parser>,
-}
+mod watcher;
 
 #[tokio::main]
 async fn main() {
@@ -28,10 +18,11 @@ async fn main() {
     let mut parser = tree_sitter::Parser::new();
     parser.set_language(language).unwrap();
 
-    let (service, socket) = LspService::new(|client| Backend {
+    let (service, socket) = LspService::new(|client| interface::Backend {
         client,
-        open_docs: Mutex::new(HashMap::new()),
+        docs: RwLock::new(HashMap::new()),
         parser: Mutex::new(parser),
+        workspace_files: Arc::new(Mutex::new(vec![])),
     });
     Server::new(stdin, stdout, socket).serve(service).await;
 }
