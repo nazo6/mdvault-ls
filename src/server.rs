@@ -1,3 +1,4 @@
+use ignore::Walk;
 use tower_lsp::jsonrpc::Result;
 use tower_lsp::lsp_types::*;
 use tower_lsp::LanguageServer;
@@ -17,8 +18,21 @@ impl LanguageServer for Backend {
         })?;
         let path = workspace.uri.path().to_string();
 
+        {
+            let mut workspace_files = (*self.workspace_files).write().await;
+            for result in Walk::new(&path) {
+                match result {
+                    Ok(entry) => {
+                        workspace_files.insert(entry.into_path());
+                    }
+                    Err(err) => println!("ERROR: {}", err),
+                }
+            }
+        }
+
+        let workspace_files = self.workspace_files.clone();
         tokio::spawn(async move {
-            async_watch(path).await;
+            async_watch(path, workspace_files).await;
         });
 
         Ok(InitializeResult {

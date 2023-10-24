@@ -1,8 +1,15 @@
 use notify::{Config, Event, RecommendedWatcher, RecursiveMode, Watcher};
-use std::path::Path;
+use std::{
+    collections::HashSet,
+    path::{Path, PathBuf},
+    sync::Arc,
+};
 use tokio::{
     runtime::Runtime,
-    sync::mpsc::{self, Receiver},
+    sync::{
+        mpsc::{self, Receiver},
+        RwLock,
+    },
 };
 
 fn async_watcher() -> notify::Result<(RecommendedWatcher, Receiver<notify::Result<Event>>)> {
@@ -21,14 +28,29 @@ fn async_watcher() -> notify::Result<(RecommendedWatcher, Receiver<notify::Resul
     Ok((watcher, rx))
 }
 
-pub async fn async_watch<P: AsRef<Path>>(path: P) -> notify::Result<()> {
+pub async fn async_watch<P: AsRef<Path>>(
+    path: P,
+    state: Arc<RwLock<HashSet<PathBuf>>>,
+) -> notify::Result<()> {
     let (mut watcher, mut rx) = async_watcher()?;
 
     watcher.watch(path.as_ref(), RecursiveMode::Recursive)?;
 
     while let Some(res) = rx.recv().await {
         match res {
-            Ok(event) => println!("changed: {:?}", event),
+            Ok(event) => {
+                let mut state = state.write().await;
+                use notify::EventKind::*;
+                match event.kind {
+                    Create(_) => event.paths.into_iter().for_each(|p| {
+                        state.insert(p);
+                    }),
+                    Remove(_) => event.paths.into_iter().for_each(|p| {
+                        state.remove(&p);
+                    }),
+                    _ => {}
+                }
+            }
             Err(e) => println!("watch error: {:?}", e),
         }
     }

@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::collections::HashSet;
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -23,5 +24,5 @@ pub struct Backend {
     pub docs: RwLock<HashMap<Url, Document>>,
     #[educe(Debug(ignore))]
     pub parser: Mutex<Parser>,
-    pub workspace_files: Arc<Mutex<Vec<PathBuf>>>,
+    pub workspace_files: Arc<RwLock<HashSet<PathBuf>>>,
 }

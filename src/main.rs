@@ -1,4 +1,7 @@
-use std::{collections::HashMap, sync::Arc};
+use std::{
+    collections::{HashMap, HashSet},
+    sync::Arc,
+};
 
 use tokio::sync::{Mutex, RwLock};
 use tower_lsp::{LspService, Server};
@@ -22,7 +25,7 @@ async fn main() {
         client,
         docs: RwLock::new(HashMap::new()),
         parser: Mutex::new(parser),
-        workspace_files: Arc::new(Mutex::new(vec![])),
+        workspace_files: Arc::new(RwLock::new(HashSet::new())),
     });
     Server::new(stdin, stdout, socket).serve(service).await;
 }
